@@ -10,9 +10,16 @@ const io = socketIo(server, {
   cors: {
     origin: 'http://localhost:3000',
     methods: ['GET', 'POST'], 
+    credentials: true,
   },
 }); 
-app.use(cors());
+
+app.use(cors({
+  origin: 'http://localhost:3000', // Frontend origin
+  methods: ['GET', 'POST'],
+  credentials: true, // Allow credentials if needed
+}));
+// app.use(cors());
 
 // MQTT Broker settings
 const MQTT_BROKER = 'mqtt://broker.emqx.io';
@@ -37,8 +44,9 @@ mqttClient.on('connect', () => {
 
 // Listen for messages from the MQTT broker
 mqttClient.on('message', (topic, message) => {
-  // console.log(`Message received on topic ${topic}: ${message.toString()}`);
+  console.log(`Message received on topic ${topic}: ${message.toString()}`);
   const data = message.toString();
+  // console.log(data);
   // Send the message to connected frontend clients via Socket.io
   io.emit('mqttData', data);
 });
@@ -48,3 +56,4 @@ const PORT = 5000;
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
