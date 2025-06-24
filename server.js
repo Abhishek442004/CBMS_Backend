@@ -496,8 +496,6 @@
 
 
 
-
-
 require('dotenv').config();
 
 const express = require('express');
@@ -518,20 +516,24 @@ const {
   MQTT_PASSWORD,
   ADMIN_USERNAME,
   ADMIN_PASSWORD,
-  CLIENT_URL,
+  CLIENT_URL, // make sure this is set correctly in your .env file
   PORT = 5000
 } = process.env;
 
+// ✅ Use CLIENT_URL from .env or fallback to known frontend URL
+const allowedOrigin = CLIENT_URL || "https://cbms-k176.onrender.com";
+
+// Enable CORS for both Express and Socket.IO
 const io = socketIo(server, {
   cors: {
-    origin: CLIENT_URL,
+    origin: allowedOrigin,
     methods: ['GET', 'POST'],
     credentials: true,
   },
 });
 
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: allowedOrigin,
   methods: ['GET', 'POST'],
   credentials: true,
 }));
@@ -545,17 +547,17 @@ const mqttClient = mqtt.connect(MQTT_BROKER, {
 });
 
 mqttClient.on('connect', () => {
-  console.log('Connected to MQTT broker');
+  console.log('✅ Connected to MQTT broker');
   mqttClient.subscribe(MQTT_TOPIC, (err) => {
     if (err) {
-      console.error(`Failed to subscribe to topic ${MQTT_TOPIC}`, err);
+      console.error(`❌ Failed to subscribe to topic ${MQTT_TOPIC}`, err);
     } else {
-      console.log(`Subscribed to topic ${MQTT_TOPIC}`);
+      console.log(`📡 Subscribed to topic ${MQTT_TOPIC}`);
     }
   });
 });
 
-// Admin login
+// Admin login endpoint
 const ADMIN_CREDENTIALS = {
   username: ADMIN_USERNAME,
   password: ADMIN_PASSWORD,
@@ -599,7 +601,7 @@ const parseSensorData = (jsonString) => {
       Acoustic: data.Acoustic
     };
   } catch (err) {
-    console.error("Failed to parse JSON:", jsonString);
+    console.error("❌ Failed to parse JSON:", jsonString);
     return null;
   }
 };
@@ -608,7 +610,6 @@ const parseSensorData = (jsonString) => {
 const appendToExcel = (parsedData) => {
   try {
     const filePath = './CBMS_TVF.xlsx';
-
     let prevX = null, prevY = null, prevZ = null;
 
     if (!fs.existsSync(filePath)) {
@@ -666,22 +667,22 @@ const appendToExcel = (parsedData) => {
   }
 };
 
-// MQTT message handler
+// Handle incoming MQTT messages
 mqttClient.on('message', (topic, message) => {
   console.log(`📥 MQTT message on topic ${topic}: ${message.toString()}`);
 
   const parsedData = parseSensorData(message.toString());
   if (parsedData) {
-    io.emit('mqttData', parsedData);   // send to frontend
-    appendToExcel(parsedData);         // save to Excel
+    io.emit('mqttData', parsedData);  
+    appendToExcel(parsedData);        
   }
 });
 
 mqttClient.on('error', (error) => {
-  console.error('MQTT Client Error:', error);
+  console.error('❌ MQTT Client Error:', error);
 });
 
-// Start server
+// Start the server
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
