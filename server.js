@@ -578,33 +578,76 @@ app.post('/api/login', (req, res) => {
 });
 
 // Parse incoming JSON data
-const parseSensorData = (jsonString) => {
+// const parseSensorData = (jsonString) => {
+//   try {
+//     const data = JSON.parse(jsonString);
+//     const timestamp = new Date().toLocaleTimeString();
+//     const datestamp = new Date().toLocaleDateString();
+
+//     return {
+//       Datestamp: datestamp,
+//       Timestamp: timestamp,
+//       RPM: data.RPM,
+//       Current_PhaseA: data.Current_PhaseA,
+//       Current_PhaseB: data.Current_PhaseB,
+//       Current_PhaseC: data.Current_PhaseC,
+//       Voltage_PhaseA: data.Voltage_PhaseA,
+//       Voltage_PhaseB: data.Voltage_PhaseB,
+//       Voltage_PhaseC: data.Voltage_PhaseC,
+//       Temperature: data.Temperature,
+//       Vibration_X: data.Vibration_X,
+//       Vibration_Y: data.Vibration_Y,
+//       Vibration_Z: data.Vibration_Z,
+//       Acoustic: data.Acoustic
+//     };
+//   } catch (err) {
+//     console.error("❌ Failed to parse JSON:", jsonString);
+//     return null;
+//   }
+// };
+
+const parseSensorData = (rawString) => {
   try {
-    const data = JSON.parse(jsonString);
+    const data = {};
     const timestamp = new Date().toLocaleTimeString();
     const datestamp = new Date().toLocaleDateString();
+
+   
+    const pairs = rawString.split(',');
+
+    pairs.forEach((pair) => {
+      let [key, value] = pair.split(':');
+
+
+      value = value.replace(/[^\d.-]/g, ''); // keep only numbers, dot, and minus sign
+
+      // Convert to float if numeric
+      data[key.trim()] = isNaN(value) ? value.trim() : parseFloat(value);
+    });
 
     return {
       Datestamp: datestamp,
       Timestamp: timestamp,
       RPM: data.RPM,
-      Current_PhaseA: data.Current_PhaseA,
-      Current_PhaseB: data.Current_PhaseB,
-      Current_PhaseC: data.Current_PhaseC,
-      Voltage_PhaseA: data.Voltage_PhaseA,
-      Voltage_PhaseB: data.Voltage_PhaseB,
-      Voltage_PhaseC: data.Voltage_PhaseC,
+      Current_PhaseA: data.Current, // Map as needed
+      Current_PhaseB: data.Current,
+      Current_PhaseC: data.Current,
+      Voltage_PhaseA: data.Volts,
+      Voltage_PhaseB: data.Volts,
+      Voltage_PhaseC: data.Volts,
       Temperature: data.Temperature,
-      Vibration_X: data.Vibration_X,
-      Vibration_Y: data.Vibration_Y,
-      Vibration_Z: data.Vibration_Z,
-      Acoustic: data.Acoustic
+      Vibration_X: data['Peak Acceleration'],
+      Vibration_Y: data['Peak Acceleration'],
+      Vibration_Z: data['Peak Acceleration'],
+      Acoustic: data.SoundDB
     };
   } catch (err) {
-    console.error("❌ Failed to parse JSON:", jsonString);
+    console.error("❌ Failed to parse sensor data string:", rawString);
     return null;
   }
 };
+
+
 
 // Append to Excel
 const appendToExcel = (parsedData) => {
